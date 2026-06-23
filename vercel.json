@@ -1,7 +1,0 @@
-{
-  "cleanUrls": true,
-  "rewrites": [
-    { "source": "/", "destination": "/papcio/index.html" },
-    { "source": "/(.*)", "destination": "/papcio/$1" }
-  ]
-}
