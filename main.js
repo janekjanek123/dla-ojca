@@ -360,7 +360,7 @@ function initGift() {
   function startCountdown() {
     if (started) return; started = true;
     fleeActive = true;
-    let left = SHOT ? 0 : 30;
+    let left = SHOT ? 0 : 10;
     if (countdownEl) countdownEl.textContent = left;
     if (left === 0) { stopFleeing(); return; }
     const iv = setInterval(() => {
