@@ -10,7 +10,7 @@ const RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 /* ---- content model --------------------------------------------------- */
 const STATES = [
   { key: "intro", kind: "intro",
-    word: "CZŁOWIEK\nO WIELU\nTWARZACH",
+    word: "WSZYSTKIEGO NAJLEPSZEGO\nDLA NAJLEPSZEGO PAPCIA\nZ OKAZJI DNIA OJCA",
     label: "", accent: "#f1f1f4",
     bg: "radial-gradient(120% 90% at 50% 38%, #17171d 0%, #0a0a0e 52%, #000 100%)" },
 
@@ -52,6 +52,8 @@ const STATES = [
 
 const SEGS = STATES.length - 1;          // 7 transitions
 const CARD_COUNT = STATES.filter(s => s.card).length;
+// viewport-heights of scrolling per transition (higher = less sensitive)
+const SCROLL_PER = 2.6;
 
 /* ---- build DOM ------------------------------------------------------- */
 const bgEl = document.getElementById("bg");
@@ -154,7 +156,14 @@ for (let i = 0; i < SEGS; i++) {
   const co = cardForState(i);
   if (co) tl.to(co, { opacity: 0, rotateY: -D.rotY, rotateX: D.rotX, z: -D.z, scale: D.scale, duration: 0.55, ease: "power2.in" }, p);
   const ci = cardForState(i + 1);
-  if (ci) tl.to(ci, { opacity: 1, rotateY: 0, rotateX: 0, z: 0, scale: 1, duration: 0.64, ease: "power3.out" }, p + 0.34);
+  if (ci) {
+    // final PAPCIO state: photo sits BELOW the headline (smaller, lower)
+    const lastPapcio = STATES[i + 1].kind === "papcio";
+    const active = lastPapcio
+      ? { opacity: 1, rotateY: 0, rotateX: 0, z: 0, scale: 0.78, yPercent: 24, duration: 0.64, ease: "power3.out" }
+      : { opacity: 1, rotateY: 0, rotateX: 0, z: 0, scale: 1, yPercent: 0, duration: 0.64, ease: "power3.out" };
+    tl.to(ci, active, p + 0.34);
+  }
 }
 tl.to({}, { duration: 0.6 }, SEGS); // hold final state
 
@@ -198,7 +207,7 @@ function startExperience() {
     stage.style.position = "fixed";
     stage.style.inset = "0";
 
-    if (SEEK === "gift") {
+    if (SEEK === "gift" || SEEK === "chase") {
       document.getElementById("experience").style.display = "none";
       tl.progress(1);
     } else {
@@ -211,7 +220,7 @@ function startExperience() {
 
   // smooth scroll
   if (!RM && window.Lenis) {
-    const lenis = new Lenis({ duration: 1.15, smoothWheel: true, touchMultiplier: 1.4 });
+    const lenis = new Lenis({ duration: 1.25, smoothWheel: true, wheelMultiplier: 0.8, touchMultiplier: 1.1 });
     lenis.on("scroll", ScrollTrigger.update);
     gsap.ticker.add((time) => lenis.raf(time * 1000));
     gsap.ticker.lagSmoothing(0);
@@ -223,7 +232,8 @@ function startExperience() {
     animation: tl,
     trigger: "#experience",
     start: "top top",
-    end: () => "+=" + (SEGS + 0.6) * window.innerHeight,
+    // longer scroll distance per transition = lower scroll sensitivity
+    end: () => "+=" + (SEGS * SCROLL_PER + 0.6) * window.innerHeight,
     pin: "#stage",
     scrub: RM ? 0.6 : 1,
     anticipatePin: 1,
@@ -278,49 +288,49 @@ if (SHOT) {
    ===================================================================== */
 function initGift() {
   const field = document.getElementById("giftField");
-  const frame = document.getElementById("giftFrame");
+  const chase = document.getElementById("giftChase");
+  const prize = document.getElementById("prize");
   const ticketsWrap = document.getElementById("tickets");
-  const revealBtn = document.getElementById("revealBtn");
   const giftHint = document.getElementById("giftHint");
-  const giftDone = document.getElementById("giftDone");
   const countdownEl = document.getElementById("countdown");
 
   // build two tickets
   ticketsWrap.innerHTML = ticketHTML("7", "14") + ticketHTML("7", "15");
 
-  // center frame via gsap transform
-  gsap.set(frame, { xPercent: -50, yPercent: -50, x: 0, y: 0 });
+  // center the tiny frame via gsap transform
+  gsap.set(chase, { xPercent: -50, yPercent: -50, x: 0, y: 0 });
 
   let fleeActive = false;
   let stopped = false;
+  let revealed = false;
   let cur = { x: 0, y: 0 };
-  const RADIUS = 240;
-
-  const moveX = gsap.quickTo(frame, "x", { duration: 0.45, ease: "power3.out" });
-  const moveY = gsap.quickTo(frame, "y", { duration: 0.45, ease: "power3.out" });
+  const RADIUS = 280; // bails out well before the cursor arrives
 
   function flee(clientX, clientY) {
     if (!fleeActive || stopped) return;
-    const fr = frame.getBoundingClientRect();
+    const fr = chase.getBoundingClientRect();
     const fl = field.getBoundingClientRect();
     const cx = fr.left + fr.width / 2;
     const cy = fr.top + fr.height / 2;
-    const dx = cx - clientX;
-    const dy = cy - clientY;
-    const dist = Math.hypot(dx, dy) || 1;
-    if (dist < RADIUS) {
-      const force = (RADIUS - dist) / RADIUS;
-      const ang = Math.atan2(dy, dx);
-      const maxX = Math.max(0, (fl.width - fr.width) / 2 - 12);
-      const maxY = Math.max(0, (fl.height - fr.height) / 2 - 12);
-      cur.x = clamp(cur.x + Math.cos(ang) * force * 90, -maxX, maxX);
-      cur.y = clamp(cur.y + Math.sin(ang) * force * 90, -maxY, maxY);
-      // if cornered, jump to opposite side
-      if ((Math.abs(cur.x) >= maxX - 1) && (Math.abs(cur.y) >= maxY - 1)) {
-        cur.x = -cur.x * 0.85; cur.y = -cur.y * 0.85;
-      }
-      moveX(cur.x); moveY(cur.y);
-    }
+    const dist = Math.hypot(cx - clientX, cy - clientY) || 1;
+    if (dist >= RADIUS) return;
+
+    const maxX = Math.max(40, (fl.width - fr.width) / 2 - 16);
+    const maxY = Math.max(40, (fl.height - fr.height) / 2 - 16);
+
+    // cursor position relative to field centre -> dart to the OPPOSITE side
+    const relX = clientX - (fl.left + fl.width / 2);
+    const relY = clientY - (fl.top + fl.height / 2);
+    const sx = relX === 0 ? (Math.random() < 0.5 ? -1 : 1) : -Math.sign(relX);
+    const sy = relY === 0 ? (Math.random() < 0.5 ? -1 : 1) : -Math.sign(relY);
+
+    let tx = sx * maxX * (0.6 + Math.random() * 0.4) + (Math.random() - 0.5) * maxX * 0.5;
+    let ty = sy * maxY * (0.6 + Math.random() * 0.4) + (Math.random() - 0.5) * maxY * 0.5;
+    tx = clamp(tx, -maxX, maxX);
+    ty = clamp(ty, -maxY, maxY);
+
+    cur.x = tx; cur.y = ty;
+    gsap.to(chase, { x: tx, y: ty, duration: 0.42, ease: "power3.out", overwrite: true });
   }
 
   field.addEventListener("pointermove", (e) => flee(e.clientX, e.clientY));
@@ -328,22 +338,34 @@ function initGift() {
 
   function stopFleeing() {
     stopped = true; fleeActive = false;
-    gsap.to(frame, { x: 0, y: 0, duration: 0.9, ease: "elastic.out(1, 0.7)" });
-    revealBtn.disabled = false;
-    revealBtn.classList.add("is-live");
-    giftHint.innerHTML = "Złapany! Teraz odsłoń swój prezent 🎁";
+    gsap.to(chase, { x: 0, y: 0, duration: 0.9, ease: "elastic.out(1, 0.7)" });
+    chase.disabled = false;
+    chase.classList.add("is-live");
+    if (giftHint) giftHint.innerHTML = "Złapany! Kliknij, żeby odsłonić prezent 🎁";
   }
+
+  function reveal() {
+    if (revealed || chase.disabled) return;
+    revealed = true;
+    chase.classList.add("is-gone");
+    prize.classList.add("is-on");
+    prize.setAttribute("aria-hidden", "false");
+    if (giftHint) giftHint.style.opacity = "0";
+    burstConfetti();
+  }
+
+  chase.addEventListener("click", reveal);
 
   let started = false;
   function startCountdown() {
     if (started) return; started = true;
     fleeActive = true;
     let left = SHOT ? 0 : 30;
-    countdownEl.textContent = left;
+    if (countdownEl) countdownEl.textContent = left;
     if (left === 0) { stopFleeing(); return; }
     const iv = setInterval(() => {
       left -= 1;
-      countdownEl.textContent = Math.max(0, left);
+      if (countdownEl) countdownEl.textContent = Math.max(0, left);
       if (left <= 0) { clearInterval(iv); stopFleeing(); }
     }, 1000);
   }
@@ -354,19 +376,11 @@ function initGift() {
   }, { threshold: 0.45 });
   io.observe(document.getElementById("gift"));
 
-  revealBtn.addEventListener("click", () => {
-    if (revealBtn.disabled) return;
-    ticketsWrap.classList.add("is-revealed");
-    revealBtn.classList.add("is-gone");
-    giftHint.style.opacity = "0";
-    giftDone.classList.add("is-on");
-    burstConfetti();
-  });
-
   if (SHOT && SEEK === "gift") {
-    // reveal immediately for screenshots
     stopFleeing();
-    ticketsWrap.classList.add("is-revealed");
+    reveal();
+  } else if (SHOT && SEEK === "chase") {
+    stopFleeing();
   }
 }
 
@@ -378,9 +392,9 @@ function ticketHTML(row, seat) {
         <div class="crest"><span>PW</span><small>1911</small></div>
         <div class="ticket__club">CZARNE KOSZULE<b>POLONIA WARSZAWA</b></div>
       </div>
-      <div class="ticket__match">POLONIA <em>vs</em> LEGIA</div>
+      <div class="ticket__match">POLONIA <em>vs</em> UNIA</div>
       <div class="ticket__meta">
-        <span>Derby Warszawy</span>
+        <span>Polonia Warszawa — Unia Skierniewice</span>
         <span><b>15.08.2026</b> · 18:00</span>
         <span>Stadion Konwiktorska 6</span>
         <span>Trybuna Kryta · Rząd <b>${row}</b> · Miejsce <b>${seat}</b></span>

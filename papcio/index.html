@@ -63,20 +63,23 @@
     </header>
 
     <div class="gift__field" id="giftField">
-      <div class="gift__frame" id="giftFrame">
-        <div class="tickets" id="tickets" aria-hidden="false">
-          <!-- two tickets injected by JS -->
-        </div>
-        <button class="reveal" id="revealBtn" type="button" disabled>
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+      <!-- tiny runaway frame -->
+      <button class="chase" id="giftChase" type="button" disabled aria-label="Odsłoń prezent">
+        <span class="chase__peek" aria-hidden="true"><i></i><i></i></span>
+        <span class="chase__label">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
           <span>odsłoń prezent</span>
-        </button>
-      </div>
-    </div>
+        </span>
+      </button>
 
-    <div class="gift__done" id="giftDone" aria-hidden="true">
-      <h3>Wszystkiego najlepszego, Papciu!</h3>
-      <p>Dwa bilety na Polonię. Reszta meczu jest na Ciebie. 🤍🖤</p>
+      <!-- full prize, revealed after the catch -->
+      <div class="prize" id="prize" aria-hidden="true">
+        <div class="tickets" id="tickets"></div>
+        <div class="gift__done" id="giftDone">
+          <h3>Wszystkiego najlepszego, Papciu!</h3>
+          <p>Dwa bilety na Polonię. Reszta meczu jest na Ciebie. 🤍🖤</p>
+        </div>
+      </div>
     </div>
 
     <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
